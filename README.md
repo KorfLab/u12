@@ -17,11 +17,11 @@ Project u12
 + `at.genome.fa.gz` - complete genome TAIR10
 + `at.genes.gff3.gz` - complete set of genes TAIR10
 + `at.splices.gff3.gz` - complete set of RNA-seq introns TAIR10
-
++ `at.introns.tsv.gz` - the result of the Build procedure below
 
 ## Build ##
 
-Use the `1pct...` files for testing.
+Used the `1pct...` files for testing.
 
 ```
 ./u12 introns --fasta 1pct.fa.gz --splices 1pct.splices.gff3.gz
