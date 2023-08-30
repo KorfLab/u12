@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+import gzip
 import sys
 
 import grimoire.genome
@@ -16,6 +17,45 @@ def introns(arg):
 		for (beg, end, strand), d in intron.items():
 			print(chrom.name, beg, end, strand, d['count'], d['seq'], sep='\t')
 
+def overlap(arg):
+	if arg.introns.endswith('gz'): fp = gzip.open(arg.introns, 'rt')
+	else: fp = open(arg.introns)
+	
+	introns = {}
+	for line in fp:
+		(chrom, b, e, s, n, seq) = line.split()
+		if chrom not in introns: introns[chrom] = []
+		introns[chrom].append( (int(b), int(e), s, int(n), seq) )
+	fp.close()
+	
+	for chrom in introns:
+		introns[chrom].sort(key=lambda x: x[0])
+		for i in range(len(introns[chrom])):
+			(b1, e1, s1, n1, seq1) = introns[chrom][i]
+			if n1 < arg.mincount: continue
+			ss1 = f'{seq1[:2]}{seq1[-2:]}'
+			if ss1 != arg.ss1: continue
+			for j in range(len(introns[chrom])):
+				(b2, e2, s2, n2, seq2) = introns[chrom][j]
+				if b2 > e1: break
+				if n2 < arg.mincount: continue
+				if s1 != s2: continue
+				ss2 = f'{seq2[:2]}{seq2[-2:]}'
+				if ss2 != arg.ss2: continue
+				if b2 <= e1 and e2 >= b1: # overlap
+					print(chrom, b1, e1, b2, e2, ss1, ss2 )
+
+def stats(arg):
+	if arg.introns.endswith('gz'): fp = gzip.open(arg.introns, 'rt')
+	else: fp = open(arg.introns)
+	scount = {}
+	for line in fp:
+		(chrom, b, e, s, n, seq) = line.split()
+		sig = seq[0:2] + seq[-2:]
+		if sig not in scount: scount[sig] = 0
+		scount[sig] += int(n)
+	for k, v in sorted(scount.items(), key=lambda x: x[1], reverse=True):
+		print(k, v)
 
 ## CLI top-level ##
 parser = argparse.ArgumentParser(description='u12 project runner')
@@ -27,9 +67,23 @@ parse_f1.add_argument('--fasta', required=True, help='genome fasta file')
 parse_f1.add_argument('--splices', required=True, help='introns in gff3')
 parse_f1.set_defaults(func=introns)
 
-## compare ##
+## overlap ##
 parse_f2 = subparsers.add_parser('overlap', help='find overlaps')
-#parse_f2.set_defaults(func=)
+parse_f2.add_argument('--introns', required=True, help='introns.tsv file')
+parse_f2.add_argument('--mincount', required=False, type=int, default=5,
+	help='minimum observed splices [%(default)i]')
+parse_f2.add_argument('--ss1', required=False, default='ATAC',
+	help='splice site 1 [%(default)s]')
+parse_f2.add_argument('--ss2', required=False, default='GTAG',
+	help='splice site 2 [%(default)s]')
+parse_f2.set_defaults(func=overlap)
+
+## stats ##
+parse_f3 = subparsers.add_parser('stats', help='stats on splice sites')
+parse_f3.add_argument('--introns', required=True, help='introns.tsv file')
+parse_f3.add_argument('--mincount', required=False, type=int, default=5,
+	help='minimum observed splices [%(default)i]')
+parse_f3.set_defaults(func=stats)
 
 try:
 	arg = parser.parse_args()
