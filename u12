@@ -1,0 +1,39 @@
+#!/usr/bin/env python3
+
+import argparse
+import sys
+
+import grimoire.genome
+
+def introns(arg):
+	for chrom in grimoire.genome.Reader(fasta=arg.fasta, gff=arg.splices):
+		intron = {} # indexed by (beg, end, strand)
+		for splice in chrom.ftable.features:
+			sig = (splice.beg, splice.end, splice.strand)
+			if sig not in intron:
+				intron[sig] = {'count': 0, 'seq': splice.seq_str()}
+			intron[sig]['count'] += int(splice.score)
+		for (beg, end, strand), d in intron.items():
+			print(chrom.name, beg, end, strand, d['count'], d['seq'], sep='\t')
+
+
+## CLI top-level ##
+parser = argparse.ArgumentParser(description='u12 project runner')
+subparsers = parser.add_subparsers(required=True, help='sub-commands')
+
+## harvest ##
+parse_f1 = subparsers.add_parser('introns', help='get all introns')
+parse_f1.add_argument('--fasta', required=True, help='genome fasta file')
+parse_f1.add_argument('--splices', required=True, help='introns in gff3')
+parse_f1.set_defaults(func=introns)
+
+## compare ##
+parse_f2 = subparsers.add_parser('overlap', help='find overlaps')
+#parse_f2.set_defaults(func=)
+
+try:
+	arg = parser.parse_args()
+except:
+	print('u12 requires a sub-command, use --help for more info')
+	sys.exit(1)
+arg.func(arg)
