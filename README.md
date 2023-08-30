@@ -42,10 +42,17 @@ The introns for the entire genome result in an 87M file (16M compressed).
 
 ```
 ./u12 introns --fasta at.genome.fa.gz --splices at.splices.gff3.gz > at.introns.tsv
+gzip introns.tsv
 ```
 
 To find overlapping introns
 
 ```
 ./u12 overlap --introns at.introns.tsv.gz
+```
+
+Some stats about the splice sites
+
+```
+./u12 stats --introns at.introns.tsv.gz
 ```

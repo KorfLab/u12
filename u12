@@ -48,13 +48,21 @@ def overlap(arg):
 def stats(arg):
 	if arg.introns.endswith('gz'): fp = gzip.open(arg.introns, 'rt')
 	else: fp = open(arg.introns)
-	scount = {}
+	weight = {}
+	number = {}
 	for line in fp:
 		(chrom, b, e, s, n, seq) = line.split()
 		sig = seq[0:2] + seq[-2:]
-		if sig not in scount: scount[sig] = 0
-		scount[sig] += int(n)
-	for k, v in sorted(scount.items(), key=lambda x: x[1], reverse=True):
+		if sig not in weight:
+			weight[sig] = 0
+			number[sig] = 0
+		weight[sig] += int(n)
+		number[sig] += 1
+	print('Weights')
+	for k, v in sorted(weight.items(), key=lambda x: x[1], reverse=True):
+		print(k, v)
+	print('Counts')
+	for k, v in sorted(number.items(), key=lambda x: x[1], reverse=True):
 		print(k, v)
 
 ## CLI top-level ##
